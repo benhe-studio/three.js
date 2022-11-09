@@ -2,7 +2,7 @@
 
 	class USDZExporter {
 
-		async parse( scene ) {
+		async parse( scene, texture ) {
 
 			const files = {};
 			const modelFileName = 'model.usda';
@@ -53,14 +53,15 @@
 			files[ modelFileName ] = fflate.strToU8( output );
 			output = null;
 			for ( const id in textures ) {
-
+/*
 				const texture = textures[ id ];
 				const color = id.split( '_' )[ 1 ];
 				const isRGBA = texture.format === 1023;
 				const canvas = imageToCanvas( texture.image, color );
 				const blob = await new Promise( resolve => canvas.toBlob( resolve, isRGBA ? 'image/png' : 'image/jpeg', 1 ) );
 				files[ `textures/Texture_${id}.${isRGBA ? 'png' : 'jpg'}` ] = new Uint8Array( await blob.arrayBuffer() );
-
+*/
+				files[ `textures/Texture_${id}.jpg` ] = texture;
 			}
 
 			// 64 byte alignment
@@ -363,7 +364,7 @@ ${array.join( '' )}
         def Shader "Texture_${texture.id}_${mapType}"
         {
             uniform token info:id = "UsdUVTexture"
-            asset inputs:file = @textures/Texture_${id}.${isRGBA ? 'png' : 'jpg'}@
+            asset inputs:file = @textures/Texture_${id}.${isRGBA ? 'jpg' : 'jpg'}@
             float2 inputs:st.connect = </Materials/Material_${material.id}/Transform2d_${mapType}.outputs:result>
             token inputs:wrapS = "repeat"
             token inputs:wrapT = "repeat"
