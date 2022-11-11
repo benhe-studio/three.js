@@ -6,7 +6,7 @@ import * as fflate from '../libs/fflate.module.js';
 
 class USDZExporter {
 
-	async parse( scene, texture ) {
+	async parse( scene, imageBlob ) {
 
 		const files = {};
 		const modelFileName = 'model.usda';
@@ -59,7 +59,7 @@ class USDZExporter {
 
 		} );
 
-		output += buildMaterials( materials, textures );
+		output += buildMaterials( materials, textures, imageBlob );
 
 		files[ modelFileName ] = fflate.strToU8( output );
 		output = null;
@@ -75,7 +75,8 @@ class USDZExporter {
 
 			files[ `textures/Texture_${ id }.${ isRGBA ? 'png' : 'jpg' }` ] = new Uint8Array( await blob.arrayBuffer() );
 */
-			files[ `textures/Texture_${id}.jpg` ] = texture;
+			const isRGBA = (imageBlob.type == "image/png");
+			files[ `textures/Texture_${id}.${ isRGBA ? 'png' : 'jpg' }` ] = new Uint8Array( await imageBlob.arrayBuffer() );
 		}
 
 		// 64 byte alignment
@@ -350,7 +351,7 @@ function buildVector2Array( attribute, count ) {
 
 // Materials
 
-function buildMaterials( materials, textures ) {
+function buildMaterials( materials, textures, imageBlob ) {
 
 	const array = [];
 
@@ -358,7 +359,7 @@ function buildMaterials( materials, textures ) {
 
 		const material = materials[ uuid ];
 
-		array.push( buildMaterial( material, textures ) );
+		array.push( buildMaterial( material, textures, imageBlob ) );
 
 	}
 
@@ -371,7 +372,7 @@ ${ array.join( '' ) }
 
 }
 
-function buildMaterial( material, textures ) {
+function buildMaterial( material, textures, imageBlob ) {
 
 	// https://graphics.pixar.com/usd/docs/UsdPreviewSurface-Proposal.html
 
@@ -382,7 +383,8 @@ function buildMaterial( material, textures ) {
 	function buildTexture( texture, mapType, color ) {
 
 		const id = texture.id + ( color ? '_' + color.getHexString() : '' );
-		const isRGBA = texture.format === 1023;
+		// const isRGBA = texture.format === 1023;
+		const isRGBA = (imageBlob.type == "image/png");
 
 		textures[ id ] = texture;
 
@@ -403,7 +405,7 @@ function buildMaterial( material, textures ) {
         def Shader "Texture_${ texture.id }_${ mapType }"
         {
             uniform token info:id = "UsdUVTexture"
-            asset inputs:file = @textures/Texture_${ id }.${ isRGBA ? 'jpg' : 'jpg' }@
+            asset inputs:file = @textures/Texture_${ id }.${ isRGBA ? 'png' : 'jpg' }@
             float2 inputs:st.connect = </Materials/Material_${ material.id }/Transform2d_${ mapType }.outputs:result>
             token inputs:wrapS = "repeat"
             token inputs:wrapT = "repeat"
