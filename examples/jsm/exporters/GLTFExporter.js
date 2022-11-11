@@ -22,6 +22,7 @@ import {
 	sRGBEncoding,
 	Vector3
 } from 'three';
+import { Blob } from 'buffer';
 
 class GLTFExporter {
 
@@ -433,6 +434,8 @@ class GLTFWriter {
 	 */
 	async write( input, onDone, options ) {
 
+		console.log(options);
+
 		this.options = Object.assign( {}, {
 			// default options
 			binary: false,
@@ -440,7 +443,8 @@ class GLTFWriter {
 			onlyVisible: true,
 			maxTextureSize: Infinity,
 			animations: [],
-			includeCustomExtensions: false
+			includeCustomExtensions: false,
+			imageBlob: null
 		}, options );
 
 		if ( this.options.animations.length > 0 ) {
@@ -474,13 +478,13 @@ class GLTFWriter {
 		if ( options.binary === true ) {
 
 			// https://github.com/KhronosGroup/glTF/blob/master/specification/2.0/README.md#glb-file-format-specification
-
+/*
 			const reader = new FileReader();
 			reader.readAsArrayBuffer( blob );
 			reader.onloadend = function () {
-
+*/
 				// Binary chunk.
-				const binaryChunk = getPaddedArrayBuffer( reader.result );
+				const binaryChunk = getPaddedArrayBuffer( await blob.arrayBuffer() );
 				const binaryChunkPrefix = new DataView( new ArrayBuffer( GLB_CHUNK_PREFIX_BYTES ) );
 				binaryChunkPrefix.setUint32( 0, binaryChunk.byteLength, true );
 				binaryChunkPrefix.setUint32( 4, GLB_CHUNK_TYPE_BIN, true );
@@ -509,6 +513,8 @@ class GLTFWriter {
 					binaryChunk
 				], { type: 'application/octet-stream' } );
 
+				onDone( await glbBlob.arrayBuffer() )
+				/*
 				const glbReader = new FileReader();
 				glbReader.readAsArrayBuffer( glbBlob );
 				glbReader.onloadend = function () {
@@ -516,8 +522,9 @@ class GLTFWriter {
 					onDone( glbReader.result );
 
 				};
+				*/
 
-			};
+//			};
 
 		} else {
 
@@ -954,7 +961,18 @@ class GLTFWriter {
 		if ( ! json.bufferViews ) json.bufferViews = [];
 
 		return new Promise( function ( resolve ) {
+			const buffer = getPaddedArrayBuffer( blob );
 
+			const bufferViewDef = {
+				buffer: writer.processBuffer( buffer ),
+				byteOffset: writer.byteOffset,
+				byteLength: buffer.byteLength
+			};
+
+			writer.byteOffset += buffer.byteLength;
+			resolve( json.bufferViews.push( bufferViewDef ) - 1 );
+
+/*
 			const reader = new FileReader();
 			reader.readAsArrayBuffer( blob );
 			reader.onloadend = function () {
@@ -971,7 +989,7 @@ class GLTFWriter {
 				resolve( json.bufferViews.push( bufferViewDef ) - 1 );
 
 			};
-
+*/
 		} );
 
 	}
@@ -1088,7 +1106,7 @@ class GLTFWriter {
 		if ( ! json.images ) json.images = [];
 
 		const imageDef = { mimeType: mimeType };
-
+/*
 		const canvas = getCanvas();
 
 		canvas.width = Math.min( image.width, options.maxTextureSize );
@@ -1135,11 +1153,11 @@ class GLTFWriter {
 			ctx.drawImage( image, 0, 0, canvas.width, canvas.height );
 
 		}
-
+*/
 		if ( options.binary === true ) {
 
 			pending.push(
-
+/*
 				getToBlobPromise( canvas, mimeType )
 					.then( blob => writer.processBufferViewImage( blob ) )
 					.then( bufferViewIndex => {
@@ -1147,11 +1165,17 @@ class GLTFWriter {
 						imageDef.bufferView = bufferViewIndex;
 
 					} )
+*/
+				writer.processBufferViewImage( options.imageBlob ).then( bufferViewIndex => {
 
+					imageDef.bufferView = bufferViewIndex;
+
+				} )
 			);
 
 		} else {
-
+			console.log("non-binary export unsupported");
+/*
 			if ( canvas.toDataURL !== undefined ) {
 
 				imageDef.uri = canvas.toDataURL( mimeType );
@@ -1171,7 +1195,7 @@ class GLTFWriter {
 				);
 
 			}
-
+*/
 		}
 
 		const index = json.images.push( imageDef ) - 1;
