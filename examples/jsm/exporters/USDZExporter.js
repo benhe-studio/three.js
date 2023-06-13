@@ -432,6 +432,7 @@ function buildMaterial( material, textures, imageBlob ) {
 		if ( material.transparent ) {
 
 			inputs.push( `${ pad }float inputs:opacity.connect = </Materials/Material_${ material.id }/Texture_${ material.map.id }_diffuse.outputs:a>` );
+			inputs.push( `${ pad }float inputs:opacityThreshold = 0.1` );
 
 		} else if ( material.alphaTest > 0.0 ) {
 
@@ -507,7 +508,7 @@ function buildMaterial( material, textures, imageBlob ) {
 
 		samplers.push( buildTexture( material.alphaMap, 'opacity' ) );
 
-	} else {
+	} else if ( !material.transparent ) {
 
 		inputs.push( `${pad}float inputs:opacity = ${material.opacity}` );
 
