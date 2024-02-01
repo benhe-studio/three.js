@@ -6,7 +6,7 @@ import * as fflate from '../libs/fflate.module.js';
 
 class USDZExporter {
 
-	async parse( scene, imageBlob ) {
+	async parse( scene, imageBlob, textureBlob ) {
 
 		const files = {};
 		const modelFileName = 'model.usda';
@@ -76,7 +76,13 @@ class USDZExporter {
 			files[ `textures/Texture_${ id }.${ isRGBA ? 'png' : 'jpg' }` ] = new Uint8Array( await blob.arrayBuffer() );
 */
 			const isRGBA = (imageBlob.type == "image/png");
-			files[ `textures/Texture_${id}.${ isRGBA ? 'png' : 'jpg' }` ] = new Uint8Array( await imageBlob.arrayBuffer() );
+			if (id.includes("beeeef") && textureBlob != null) {
+				console.log("beef id:" + id);
+				files[ `textures/Texture_${id}.jpg` ] = new Uint8Array( await textureBlob.arrayBuffer() );
+			} else {
+				console.log("tex id:" + id);
+				files[ `textures/Texture_${id}.${ isRGBA ? 'png' : 'jpg' }` ] = new Uint8Array( await imageBlob.arrayBuffer() );
+			}
 		}
 
 		// 64 byte alignment
