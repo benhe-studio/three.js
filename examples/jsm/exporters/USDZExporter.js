@@ -6,7 +6,7 @@ import * as fflate from '../libs/fflate.module.js';
 
 class USDZExporter {
 
-	async parse( scene, imageBlob, textureBlob ) {
+	async parse( scene, assetTextureBlobs, frameTextureBlob ) {
 
 		const files = {};
 		const modelFileName = 'model.usda';
@@ -59,7 +59,7 @@ class USDZExporter {
 
 		} );
 
-		output += buildMaterials( materials, textures, imageBlob );
+		output += buildMaterials( materials, textures, assetTextureBlobs[0] );
 
 		files[ modelFileName ] = fflate.strToU8( output );
 		output = null;
@@ -75,13 +75,22 @@ class USDZExporter {
 
 			files[ `textures/Texture_${ id }.${ isRGBA ? 'png' : 'jpg' }` ] = new Uint8Array( await blob.arrayBuffer() );
 */
-			const isRGBA = (imageBlob.type == "image/png");
-			if (id.includes("beeeef") && textureBlob != null) {
-				console.log("beef id:" + id);
-				files[ `textures/Texture_${id}.jpg` ] = new Uint8Array( await textureBlob.arrayBuffer() );
-			} else {
-				console.log("tex id:" + id);
-				files[ `textures/Texture_${id}.${ isRGBA ? 'png' : 'jpg' }` ] = new Uint8Array( await imageBlob.arrayBuffer() );
+			console.log("texture id: " + id);
+			if (id.includes("beeef")) {
+				// Apply image texture
+				let textureBlob = assetTextureBlobs[0];
+
+				const m = id.match(/beeef(\d)/);
+				if (m) {
+					const textureIndex = id.match(/beeef(\d)/)[1];
+					if (textureIndex < assetTextureBlobs.length) {
+						textureBlob = assetTextureBlobs[textureIndex];
+					}
+				}
+				const isRGBA = (textureBlob.type == "image/png");
+				files[ `textures/Texture_${id}.${ isRGBA ? 'png' : 'jpg' }` ] = new Uint8Array( await textureBlob.arrayBuffer() );
+			} else if (id.includes("beeeef") && frameTextureBlob != null) {
+				files[ `textures/Texture_${id}.jpg` ] = new Uint8Array( await frameTextureBlob.arrayBuffer() );
 			}
 		}
 
